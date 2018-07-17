@@ -101,8 +101,8 @@ func (iter *SpreadIterator) Next() *RankedNode {
 		totalSpreadScore := 0.0
 		for _, pset := range propertySets {
 			nValue, errorMsg, usedCount := pset.UsedCount(option.Node, tgName)
-			// Skip if there was errors in resolving this attribute to compute used counts
 			if errorMsg != "" {
+				// Skip if there was errors in resolving this attribute to compute used counts
 				continue
 			}
 			spreadAttributeMap := iter.tgSpreadInfo[tgName]
