@@ -3,7 +3,9 @@ package interfaces
 import (
 	"context"
 
+	"github.com/hashicorp/nomad/client/driver"
 	"github.com/hashicorp/nomad/client/driver/env"
+	cstructs "github.com/hashicorp/nomad/client/structs"
 	"github.com/hashicorp/nomad/nomad/structs"
 )
 
@@ -74,7 +76,14 @@ type TaskPrestartHook interface {
 }
 
 type TaskPoststartRequest struct {
-	// Network info
+	// Exec hook (may be nil)
+	DriverExec driver.ScriptExecutor
+
+	// Network info (may be nil)
+	DriverNetwork *cstructs.DriverNetwork
+
+	// TaskEnv is the task's environment
+	TaskEnv *env.TaskEnv
 }
 type TaskPoststartResponse struct{}
 
@@ -95,7 +104,13 @@ type TaskKillHook interface {
 	Kill(context.Context, *TaskKillRequest, *TaskKillResponse) error
 }
 
-type TaskExitedRequest struct{}
+type TaskExitedRequest struct {
+	// Exec hook (may be nil)
+	DriverExec driver.ScriptExecutor
+
+	// Network info (may be nil)
+	DriverNetwork *cstructs.DriverNetwork
+}
 type TaskExitedResponse struct{}
 
 type TaskExitedHook interface {
@@ -107,6 +122,19 @@ type TaskExitedHook interface {
 
 type TaskUpdateRequest struct {
 	VaultToken string
+
+	// Alloc is the current version of the allocation (may have been
+	// updated since the hook was created)
+	Alloc *structs.Allocation
+
+	// Network info (may be nil)
+	DriverNetwork *cstructs.DriverNetwork
+
+	// Exec hook (may be nil)
+	DriverExec driver.ScriptExecutor
+
+	// TaskEnv is the task's environment
+	TaskEnv *env.TaskEnv
 }
 type TaskUpdateResponse struct{}
 
