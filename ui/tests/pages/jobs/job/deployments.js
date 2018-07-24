@@ -8,6 +8,8 @@ import {
   visitable,
 } from 'ember-cli-page-object';
 
+import allocations from 'nomad-ui/tests/pages/components/allocations';
+
 export default create({
   visit: visitable('/jobs/:id/deployments'),
 
@@ -45,9 +47,7 @@ export default create({
       unhealthy: text('[data-test-deployment-task-group-unhealthy]'),
     }),
 
+    ...allocations('[data-test-deployment-allocation]'),
     hasAllocations: isPresent('[data-test-deployment-allocations]'),
-    allocations: collection('[data-test-deployment-allocation]', {
-      id: text('[data-test-short-id]'),
-    }),
   }),
 });
