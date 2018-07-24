@@ -32,7 +32,9 @@ type serviceHook struct {
 	taskName  string
 	restarter agentconsul.TaskRestarter
 
-	// The following fields may be updated and need to use a lock
+	// The following fields may be accessed concurrently
+	driverExec driver.ScriptExecutor
+	driverNet  *cstructs.DriverNetwork
 	canary     bool
 	services   []*structs.Service
 	networks   structs.Networks
@@ -73,10 +75,12 @@ func (h *serviceHook) Poststart(ctx context.Context, req *interfaces.TaskPoststa
 	defer h.updateLock.Unlock()
 
 	// Store the TaskEnv for interpolating now and when Updating
+	h.driverExec = req.DriverExec
+	h.driverNet = req.DriverNetwork
 	h.taskEnv = req.TaskEnv
 
 	// Create task services struct with request's driver metadata
-	taskServices := h.getTaskServices(req.DriverExec, req.DriverNetwork)
+	taskServices := h.getTaskServices()
 
 	return h.consul.RegisterTask(taskServices)
 }
@@ -87,7 +91,7 @@ func (h *serviceHook) Update(ctx context.Context, req *interfaces.TaskUpdateRequ
 
 	// Create old task services struct with request's driver metadata as it
 	// can't change due to Updates
-	oldTaskServices := h.getTaskServices(req.DriverExec, req.DriverNetwork)
+	oldTaskServices := h.getTaskServices()
 
 	// Store new updated values out of request
 	canary := false
@@ -112,7 +116,7 @@ func (h *serviceHook) Update(ctx context.Context, req *interfaces.TaskUpdateRequ
 	h.canary = canary
 
 	// Create new task services struct with those new values
-	newTaskServices := h.getTaskServices(req.DriverExec, req.DriverNetwork)
+	newTaskServices := h.getTaskServices()
 
 	return h.consul.UpdateTask(oldTaskServices, newTaskServices)
 }
@@ -121,7 +125,7 @@ func (h *serviceHook) Exited(ctx context.Context, req *interfaces.TaskExitedRequ
 	h.updateLock.Lock()
 	defer h.updateLock.Unlock()
 
-	taskServices := h.getTaskServices(req.DriverExec, req.DriverNetwork)
+	taskServices := h.getTaskServices()
 	h.consul.RemoveTask(taskServices)
 
 	// Canary flag may be getting flipped when the alloc is being
@@ -132,7 +136,7 @@ func (h *serviceHook) Exited(ctx context.Context, req *interfaces.TaskExitedRequ
 	return nil
 }
 
-func (h *serviceHook) getTaskServices(exec driver.ScriptExecutor, net *cstructs.DriverNetwork) *agentconsul.TaskServices {
+func (h *serviceHook) getTaskServices() *agentconsul.TaskServices {
 	// Interpolate with the task's environment
 	interpolatedServices := interpolateServices(h.taskEnv, h.services)
 
@@ -142,8 +146,8 @@ func (h *serviceHook) getTaskServices(exec driver.ScriptExecutor, net *cstructs.
 		Name:          h.taskName,
 		Restarter:     h.restarter,
 		Services:      interpolatedServices,
-		DriverExec:    exec,
-		DriverNetwork: net,
+		DriverExec:    h.driverExec,
+		DriverNetwork: h.driverNet,
 		Networks:      h.networks,
 		Canary:        h.canary,
 	}

@@ -321,13 +321,10 @@ func (tr *TaskRunner) updateHooks() {
 		name := upd.Name()
 
 		// Build the request
-		handle, net := tr.getDriverHandle()
 		req := interfaces.TaskUpdateRequest{
-			VaultToken:    tr.getVaultToken(),
-			Alloc:         alloc,
-			DriverNetwork: net,
-			DriverExec:    handle,
-			TaskEnv:       tr.envBuilder.Build(),
+			VaultToken: tr.getVaultToken(),
+			Alloc:      alloc,
+			TaskEnv:    tr.envBuilder.Build(),
 		}
 
 		// Time the update hook

@@ -104,13 +104,7 @@ type TaskKillHook interface {
 	Kill(context.Context, *TaskKillRequest, *TaskKillResponse) error
 }
 
-type TaskExitedRequest struct {
-	// Exec hook (may be nil)
-	DriverExec driver.ScriptExecutor
-
-	// Network info (may be nil)
-	DriverNetwork *cstructs.DriverNetwork
-}
+type TaskExitedRequest struct{}
 type TaskExitedResponse struct{}
 
 type TaskExitedHook interface {
@@ -126,12 +120,6 @@ type TaskUpdateRequest struct {
 	// Alloc is the current version of the allocation (may have been
 	// updated since the hook was created)
 	Alloc *structs.Allocation
-
-	// Network info (may be nil)
-	DriverNetwork *cstructs.DriverNetwork
-
-	// Exec hook (may be nil)
-	DriverExec driver.ScriptExecutor
 
 	// TaskEnv is the task's environment
 	TaskEnv *env.TaskEnv
